@@ -13,7 +13,7 @@ QR_FOLDER = "static/qrcodes"
 os.makedirs(QR_FOLDER, exist_ok=True)
 
 def get_students():
-response = requests.get(
+    response = requests.get(
 GOOGLE_SHEET_URL,
 params={"type": "students"},
 timeout=20
