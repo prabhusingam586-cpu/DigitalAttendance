@@ -4,7 +4,7 @@ import qrcode
 import os
 import requests
 
-GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbyMPYVY_SKWphCzqUSyS9UjX7HUjd1isXDmW2Owf1OSC2G_e9bjYkZGlkDu6ig4MtYhyg/exec"
+GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbxiChHGFoV-FNAnEFh17S-Vwi-hFKKDfeQyLXHIEC3B5EVdbNbmLIsziNnpPlQzF9HOMw/exec"
 
 app = Flask(__name__)
 from datetime import date, datetime
