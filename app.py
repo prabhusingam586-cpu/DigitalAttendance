@@ -5,7 +5,7 @@ import requests
 from datetime import date
 from urllib.parse import urlencode
 
-app = Flask(**name**)
+app = Flask(__name__)
 
 GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbxiChHGFoV-FNAnEFh17S-Vwi-hFKKDfeQyLXHIEC3B5EVdbNbmLIsziNnpPlQzF9HOMw/exec"
 
