@@ -2,7 +2,6 @@ from flask import Flask, request, render_template_string
 import mysql.connector
 import qrcode
 import os
-import cv2
 import requests
 
 GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbwlNCQQUDoEFUVQCwkpoFBDqK7IyiLqclGTUQLBrEntw1fM5d0ZMBlY6A9vjDDvP5EAiw/exec"
