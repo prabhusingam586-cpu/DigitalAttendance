@@ -11,6 +11,270 @@ GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbxiChHGFoV-FNAnEFh17
 QR_FOLDER = "static/qrcodes"
 os.makedirs(QR_FOLDER, exist_ok=True)
 
+STYLE = """
+<style>
+* {
+    box-sizing: border-box;
+}
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f7fb;
+    color: #172033;
+}
+.nav {
+    background: #173b70;
+    color: white;
+    padding: 18px 24px;
+    font-size: 20px;
+    font-weight: bold;
+}
+.container {
+    width: 92%;
+    max-width: 1050px;
+    margin: 35px auto;
+}
+.card {
+    background: white;
+    padding: 28px;
+    border-radius: 16px;
+    border: 1px solid #e5eaf2;
+    box-shadow: 0 8px 25px rgba(15, 23, 42, 0.05);
+}
+h1 {
+    font-size: 27px;
+    margin-top: 0;
+}
+.subtitle {
+    color: #64748b;
+    line-height: 1.6;
+}
+label {
+    display: block;
+    margin: 15px 0 7px;
+    font-size: 14px;
+    font-weight: bold;
+}
+input {
+    width: 100%;
+    padding: 13px;
+    border: 1px solid #dbe2ec;
+    border-radius: 8px;
+    font-size: 15px;
+}
+input:focus {
+    outline: 2px solid #93c5fd;
+    border-color: #2563eb;
+}
+.btn {
+    display: inline-block;
+    padding: 12px 17px;
+    border: 0;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: center;
+}
+.primary {
+    background: #2456a6;
+    color: white;
+}
+.secondary {
+    background: #eaf0f8;
+    color: #173b70;
+}
+.full {
+    width: 100%;
+    margin-top: 20px;
+}
+.links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 14px;
+    margin-top: 25px;
+}
+.link-card {
+    background: white;
+    border: 1px solid #e1e8f2;
+    border-radius: 12px;
+    padding: 20px;
+    text-decoration: none;
+    color: #173b70;
+    font-weight: bold;
+}
+.link-card:hover {
+    border-color: #2456a6;
+    background: #f8fbff;
+}
+.message {
+    margin-top: 15px;
+    color: #15803d;
+    font-weight: bold;
+}
+.table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: white;
+}
+th, td {
+    padding: 14px;
+    text-align: left;
+    border-bottom: 1px solid #e5eaf2;
+    white-space: nowrap;
+}
+th {
+    background: #edf3fb;
+    color: #173b70;
+    font-size: 13px;
+}
+td {
+    font-size: 14px;
+}
+tr:hover td {
+    background: #f8fbff;
+}
+.section-label {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    margin-bottom: 10px;
+}
+.student-name {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 22px;
+    overflow-wrap: anywhere;
+}
+.details {
+    border-top: 1px solid #e5eaf2;
+    border-bottom: 1px solid #e5eaf2;
+    padding: 15px 0;
+    margin-bottom: 24px;
+}
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    margin: 12px 0;
+    font-size: 14px;
+}
+.detail-row span:first-child {
+    color: #64748b;
+}
+.detail-row span:last-child {
+    font-weight: bold;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+.qr-card {
+    max-width: 390px;
+    margin: 25px auto;
+    padding: 0;
+    overflow: hidden;
+    text-align: center;
+}
+.qr-header {
+    background: #173b70;
+    color: white;
+    padding: 25px 18px;
+}
+.qr-header h2 {
+    margin: 0;
+    font-size: 21px;
+}
+.qr-header p {
+    font-size: 11px;
+    letter-spacing: 2px;
+    margin-bottom: 0;
+    color: #dbeafe;
+}
+.qr-body {
+    padding: 27px 24px;
+}
+.qr-image {
+    width: 210px;
+    height: 210px;
+    max-width: 100%;
+    object-fit: contain;
+    border: 1px solid #e5eaf2;
+    border-radius: 12px;
+    padding: 10px;
+}
+.qr-caption {
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1.6;
+    margin: 15px 0 22px;
+}
+.qr-actions {
+    display: grid;
+    gap: 10px;
+}
+.footer {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 12px;
+    margin-top: 25px;
+}
+@media (max-width: 600px) {
+    .container {
+        margin: 20px auto;
+    }
+    .card {
+        padding: 20px;
+    }
+    h1 {
+        font-size: 23px;
+    }
+}
+@media print {
+    body {
+        background: white;
+    }
+    .no-print, .footer {
+        display: none !important;
+    }
+    .qr-card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    .qr-header {
+        background: #173b70 !important;
+        color: white !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+</style>
+"""
+
+
+def page(content, title="Digital Attendance"):
+    return render_template_string("""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{{ title }}</title>
+        """ + STYLE + """
+    </head>
+    <body>
+        <div class="nav">Digital Attendance System</div>
+        """ + content + """
+        <div class="footer">Digital Attendance Management System</div>
+    </body>
+    </html>
+    """, title=title)
+
 
 def get_students():
     response = requests.get(
@@ -22,6 +286,7 @@ def get_students():
     rows = response.json()
 
     students = []
+
     for row in rows[1:]:
         if len(row) >= 3 and row[0]:
             students.append({
@@ -43,6 +308,7 @@ def get_attendance():
     rows = response.json()
 
     records = []
+
     for row in rows[1:]:
         if len(row) >= 4 and row[0]:
             records.append({
@@ -60,272 +326,54 @@ def home():
     message = ""
 
     if request.method == "POST":
-        data = {
-            "action": "register",
-            "student_id": request.form["student_id"].strip(),
-            "student_name": request.form["name"].strip(),
-            "roll_number": request.form["roll"].strip()
-        }
+        student_id = request.form["student_id"].strip()
+        student_name = request.form["name"].strip()
+        roll_number = request.form["roll"].strip()
 
         try:
-            response = requests.post(
-                GOOGLE_SHEET_URL,
-                json=data,
-                timeout=20
-            )
-            response.raise_for_status()
-            message = "Student registered successfully!"
-        except requests.RequestException as error:
+            students = get_students()
+
+            if any(s["student_id"] == student_id for s in students):
+                message = "Student ID already exists."
+            else:
+                response = requests.post(
+                    GOOGLE_SHEET_URL,
+                    json={
+                        "action": "register",
+                        "student_id": student_id,
+                        "student_name": student_name,
+                        "roll_number": roll_number
+                    },
+                    timeout=20
+                )
+                response.raise_for_status()
+                message = "Student registered successfully!"
+
+        except Exception as error:
             print("Registration Error:", error)
             message = "Registration failed. Please try again."
 
-    return render_template_string("""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Digital Attendance System</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <style>
-            body {
-                font-family: Arial;
-                background: #f1f5fb;
-                padding: 20px;
-            }
-            .box {
-                max-width: 600px;
-                margin: auto;
-                background: white;
-                padding: 25px;
-                border-radius: 12px;
-            }
-            input, button, .link {
-                box-sizing: border-box;
-                width: 100%;
-                padding: 12px;
-                margin: 8px 0;
-                display: block;
-            }
-            button, .link {
-                background: #2563eb;
-                color: white;
-                border: 0;
-                text-align: center;
-                text-decoration: none;
-                border-radius: 6px;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="box">
-            <h1>Digital Attendance System</h1>
-            <h2>Student Registration</h2>
+    content = """
+    <div class="container">
+        <div class="card">
+            <h1>Student Registration</h1>
+            <p class="subtitle">
+                Register students and manage attendance in one place.
+            </p>
+
             <form method="POST">
                 <label>Student ID</label>
                 <input name="student_id" required placeholder="STU006">
 
                 <label>Roll Number</label>
-                <input name="roll" required>
+                <input name="roll" required placeholder="Enter roll number">
 
                 <label>Student Name</label>
-                <input name="name" required>
+                <input name="name" required placeholder="Enter student name">
 
-                <button type="submit">Register Student</button>
+                <button class="btn primary full" type="submit">
+                    Register Student
+                </button>
             </form>
 
-            <p>{{ message }}</p>
-
-            <a class="link" href="/students">Student List</a>
-            <a class="link" href="/scan-qr">QR Scanner</a>
-            <a class="link" href="/attendance-report">Attendance Report</a>
-        </div>
-    </body>
-    </html>
-    """, message=message)
-
-
-@app.route("/students")
-def student_list():
-    try:
-        students = get_students()
-
-        return render_template_string("""
-        <h1>Registered Students</h1>
-        <p>Total Students: {{ students|length }}</p>
-
-        {% if students %}
-        <table border="1" cellpadding="10">
-            <tr>
-                <th>Student ID</th>
-                <th>Name</th>
-                <th>Roll Number</th>
-                <th>QR Code</th>
-            </tr>
-            {% for s in students %}
-            <tr>
-                <td>{{ s.student_id }}</td>
-                <td>{{ s.student_name }}</td>
-                <td>{{ s.roll_number }}</td>
-                <td>
-                    <a href="/generate-qr/{{ s.student_id }}">Generate QR</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
-        {% else %}
-        <p>No students found.</p>
-        {% endif %}
-
-        <p><a href="/">Back</a></p>
-        """, students=students)
-
-    except Exception as error:
-        print("Student List Error:", error)
-        return "Unable to load students. Check Google Sheets settings.", 500
-
-
-@app.route("/generate-qr/<student_id>")
-def generate_qr(student_id):
-    try:
-        students = get_students()
-        student = next(
-            (s for s in students if s["student_id"] == student_id),
-            None
-        )
-
-        if student is None:
-            return "Student not found.", 404
-
-        filename = "student_" + student_id + ".png"
-        filepath = os.path.join(QR_FOLDER, filename)
-
-        qrcode.make(student_id).save(filepath)
-
-        return render_template_string("""
-        <h1>Student QR Code</h1>
-        <p>Student ID: {{ s.student_id }}</p>
-        <p>Name: {{ s.student_name }}</p>
-        <p>Roll Number: {{ s.roll_number }}</p>
-        <img src="/static/qrcodes/{{ filename }}" width="250">
-        <p><a href="/students">Back to Student List</a></p>
-        """, s=student, filename=filename)
-
-    except Exception as error:
-        print("QR Error:", error)
-        return "Unable to generate QR code.", 500
-
-
-@app.route("/mark-attendance/<student_id>")
-def mark_attendance(student_id):
-    try:
-        students = get_students()
-        student = next(
-            (s for s in students if s["student_id"] == student_id),
-            None
-        )
-
-        if student is None:
-            return "Student not found.", 404
-
-        records = get_attendance()
-        today = str(date.today())
-
-        already_marked = any(
-            r["student_id"] == student_id
-            and r["attendance_date"].startswith(today)
-            for r in records
-        )
-
-        if already_marked:
-            return "Attendance already marked today for " + student["student_name"]
-
-        response = requests.post(
-            GOOGLE_SHEET_URL,
-            json={
-                "student_id": student["student_id"],
-                "student_name": student["student_name"],
-                "roll_number": student["roll_number"],
-                "attendance_date": today
-            },
-            timeout=20
-        )
-        response.raise_for_status()
-
-        return "Attendance marked successfully for " + student["student_name"]
-
-    except Exception as error:
-        print("Attendance Error:", error)
-        return "Unable to mark attendance. Please try again.", 500
-
-
-@app.route("/attendance-report")
-def attendance_report():
-    try:
-        records = get_attendance()
-
-        return render_template_string("""
-        <h1>Attendance Report</h1>
-        {% if records %}
-        <table border="1" cellpadding="10">
-            <tr>
-                <th>Student ID</th>
-                <th>Name</th>
-                <th>Roll Number</th>
-                <th>Attendance Date</th>
-            </tr>
-            {% for r in records %}
-            <tr>
-                <td>{{ r.student_id }}</td>
-                <td>{{ r.student_name }}</td>
-                <td>{{ r.roll_number }}</td>
-                <td>{{ r.attendance_date }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-        {% else %}
-        <p>No attendance records found.</p>
-        {% endif %}
-        <p><a href="/">Back</a></p>
-        """, records=records)
-
-    except Exception as error:
-        print("Attendance Report Error:", error)
-        return "Unable to load attendance report.", 500
-
-
-@app.route("/scan-qr")
-def scan_qr():
-    return render_template_string("""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>QR Attendance Scanner</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <script src="https://unpkg.com/html5-qrcode"></script>
-    </head>
-    <body>
-        <h2>Scan Student QR Code</h2>
-        <div id="reader" style="width:100%; max-width:400px"></div>
-        <p>Allow camera access to scan.</p>
-
-        <script>
-            function onScanSuccess(decodedText) {
-                window.location.href =
-                    "/mark-attendance/" + encodeURIComponent(decodedText);
-            }
-
-            const scanner = new Html5QrcodeScanner(
-                "reader",
-                { fps: 10, qrbox: 250 }
-            );
-
-            scanner.render(onScanSuccess);
-        </script>
-
-        <p><a href="/">Back</a></p>
-    </body>
-    </html>
-    """)
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+            {%
