@@ -151,6 +151,7 @@ def login():
     return make_page("Admin Login", body)
 
 @app.route("/")
+@login_required
 def home():
     body = """
     <h1>Digital Attendance System</h1>
@@ -216,6 +217,7 @@ def add_student():
 
 
 @app.route("/students")
+@login_required
 def student_list():
     if not check_database():
         return database_error_page()
