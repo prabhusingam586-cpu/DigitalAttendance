@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, url_for
+from flask import Flask, request, redirect, url_for, session 
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 from datetime import datetime
@@ -8,6 +8,7 @@ import io
 import base64
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SECRET_KEY")
 
 mongo_url = os.environ.get("MONGO_URI")
 
