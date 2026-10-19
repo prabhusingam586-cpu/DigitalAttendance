@@ -1,5 +1,6 @@
 from flask import Flask, request, redirect, url_for, session 
 from pymongo import MongoClient
+from functools import wraps
 from pymongo.errors import DuplicateKeyError
 from datetime import datetime
 import qrcode
@@ -9,6 +10,14 @@ import base64
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY")
+
+def login_required(view):
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
+        if not session.get("admin_logged_in"):
+            return redirect(url_for("login"))
+        return view(*args, **kwargs)
+    return wrapped_view
 
 mongo_url = os.environ.get("MONGO_URI")
 
