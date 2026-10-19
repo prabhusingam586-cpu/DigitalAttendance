@@ -343,8 +343,7 @@ def scan_qr():
                     <span class="guide-number">3</span>
                     <div><b>Confirm attendance</b><p>After scanning, the student attendance page will open.</p></div>
                 </div>
-                <hr style="border:0;border-top:1px solid #e8edf4;margin:20px 0">
-                <p style="color:#667085;font-size:13px;line-height:1.6">Tip: Camera scanning usually requires HTTPS. Open this page through your deployed Render website or localhost.</p>
+                <hr style="border:0;border-top:1px solid #e8edf4;margin:20px 0"
             </aside>
         </div>
     </div>
