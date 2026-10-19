@@ -14,7 +14,7 @@ A web-based attendance management system developed using Python Flask.
 
 * Python
 * Flask
-* MySQL
+* Mongodb
 * HTML, CSS, JavaScript
 
 ## Project Purpose
