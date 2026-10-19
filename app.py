@@ -1,379 +1,430 @@
-from flask import Flask, request, render_template_string
+from flask import Flask, request, redirect, url_for
+from pymongo import MongoClient
+from pymongo.errors import DuplicateKeyError
+from datetime import datetime
 import qrcode
 import os
-import requests
-from datetime import date
+import io
+import base64
 
 app = Flask(__name__)
 
-GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbxiChHGFoV-FNAnEFh17S-Vwi-hFKKDfeQyLXHIEC3B5EVdbNbmLIsziNnpPlQzF9HOMw/exec"
+mongo_url = os.environ.get("MONGO_URI")
 
-QR_FOLDER = "static/qrcodes"
-os.makedirs(QR_FOLDER, exist_ok=True)
-
-STYLE = """
-<style>
-* {
-    box-sizing: border-box;
-}
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f4f7fb;
-    color: #172033;
-}
-.nav {
-    background: #173b70;
-    color: white;
-    padding: 18px 24px;
-    font-size: 20px;
-    font-weight: bold;
-}
-.container {
-    width: 92%;
-    max-width: 1050px;
-    margin: 35px auto;
-}
-.card {
-    background: white;
-    padding: 28px;
-    border-radius: 16px;
-    border: 1px solid #e5eaf2;
-    box-shadow: 0 8px 25px rgba(15, 23, 42, 0.05);
-}
-h1 {
-    font-size: 27px;
-    margin-top: 0;
-}
-.subtitle {
-    color: #64748b;
-    line-height: 1.6;
-}
-label {
-    display: block;
-    margin: 15px 0 7px;
-    font-size: 14px;
-    font-weight: bold;
-}
-input {
-    width: 100%;
-    padding: 13px;
-    border: 1px solid #dbe2ec;
-    border-radius: 8px;
-    font-size: 15px;
-}
-input:focus {
-    outline: 2px solid #93c5fd;
-    border-color: #2563eb;
-}
-.btn {
-    display: inline-block;
-    padding: 12px 17px;
-    border: 0;
-    border-radius: 8px;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: bold;
-    cursor: pointer;
-    text-align: center;
-}
-.primary {
-    background: #2456a6;
-    color: white;
-}
-.secondary {
-    background: #eaf0f8;
-    color: #173b70;
-}
-.full {
-    width: 100%;
-    margin-top: 20px;
-}
-.links {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-    gap: 14px;
-    margin-top: 25px;
-}
-.link-card {
-    background: white;
-    border: 1px solid #e1e8f2;
-    border-radius: 12px;
-    padding: 20px;
-    text-decoration: none;
-    color: #173b70;
-    font-weight: bold;
-}
-.link-card:hover {
-    border-color: #2456a6;
-    background: #f8fbff;
-}
-.message {
-    margin-top: 15px;
-    color: #15803d;
-    font-weight: bold;
-}
-.table-wrap {
-    width: 100%;
-    overflow-x: auto;
-}
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    background: white;
-}
-th, td {
-    padding: 14px;
-    text-align: left;
-    border-bottom: 1px solid #e5eaf2;
-    white-space: nowrap;
-}
-th {
-    background: #edf3fb;
-    color: #173b70;
-    font-size: 13px;
-}
-td {
-    font-size: 14px;
-}
-tr:hover td {
-    background: #f8fbff;
-}
-.section-label {
-    color: #64748b;
-    font-size: 12px;
-    font-weight: bold;
-    letter-spacing: 1.5px;
-    margin-bottom: 10px;
-}
-.student-name {
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 22px;
-    overflow-wrap: anywhere;
-}
-.details {
-    border-top: 1px solid #e5eaf2;
-    border-bottom: 1px solid #e5eaf2;
-    padding: 15px 0;
-    margin-bottom: 24px;
-}
-.detail-row {
-    display: flex;
-    justify-content: space-between;
-    gap: 15px;
-    margin: 12px 0;
-    font-size: 14px;
-}
-.detail-row span:first-child {
-    color: #64748b;
-}
-.detail-row span:last-child {
-    font-weight: bold;
-    text-align: right;
-    overflow-wrap: anywhere;
-}
-.qr-card {
-    max-width: 390px;
-    margin: 25px auto;
-    padding: 0;
-    overflow: hidden;
-    text-align: center;
-}
-.qr-header {
-    background: #173b70;
-    color: white;
-    padding: 25px 18px;
-}
-.qr-header h2 {
-    margin: 0;
-    font-size: 21px;
-}
-.qr-header p {
-    font-size: 11px;
-    letter-spacing: 2px;
-    margin-bottom: 0;
-    color: #dbeafe;
-}
-.qr-body {
-    padding: 27px 24px;
-}
-.qr-image {
-    width: 210px;
-    height: 210px;
-    max-width: 100%;
-    object-fit: contain;
-    border: 1px solid #e5eaf2;
-    border-radius: 12px;
-    padding: 10px;
-}
-.qr-caption {
-    color: #64748b;
-    font-size: 12px;
-    line-height: 1.6;
-    margin: 15px 0 22px;
-}
-.qr-actions {
-    display: grid;
-    gap: 10px;
-}
-.footer {
-    text-align: center;
-    color: #94a3b8;
-    font-size: 12px;
-    margin-top: 25px;
-}
-@media (max-width: 600px) {
-    .container {
-        margin: 20px auto;
-    }
-    .card {
-        padding: 20px;
-    }
-    h1 {
-        font-size: 23px;
-    }
-}
-@media print {
-    body {
-        background: white;
-    }
-    .no-print, .footer {
-        display: none !important;
-    }
-    .qr-card {
-        box-shadow: none;
-        border: 1px solid #ddd;
-    }
-    .qr-header {
-        background: #173b70 !important;
-        color: white !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-}
-</style>
-"""
+if mongo_url:
+    client = MongoClient(mongo_url, serverSelectionTimeoutMS=10000)
+    db = client["digital_attendance"]
+    students = db["students"]
+    attendance = db["attendance"]
+else:
+    client = None
+    db = None
+    students = None
+    attendance = None
 
 
-def page(content, title="Digital Attendance"):
-    return render_template_string("""
+def check_database():
+    """Check whether MongoDB is connected."""
+    if client is None:
+        return False
+
+    try:
+        client.admin.command("ping")
+        return True
+    except Exception:
+        return False
+
+
+def make_page(title, body):
+    """Show a simple page with the same design."""
+    return f"""
     <!DOCTYPE html>
-    <html lang="en">
+    <html>
     <head>
-        <meta charset="UTF-8">
+        <title>{title}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{{ title }}</title>
-        """ + STYLE + """
+        <style>
+            body {{
+                font-family: Arial, sans-serif;
+                background: #f2f5f9;
+                margin: 0;
+                padding: 20px;
+                color: #222;
+            }}
+            .box {{
+                max-width: 850px;
+                margin: 20px auto;
+                background: white;
+                padding: 24px;
+                border-radius: 10px;
+                box-shadow: 0 2px 10px #ddd;
+            }}
+            h1, h2 {{ color: #234b7a; }}
+            input, button {{
+                box-sizing: border-box;
+                width: 100%;
+                padding: 10px;
+                margin: 7px 0 14px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+            }}
+            button, .button {{
+                background: #234b7a;
+                color: white;
+                border: 0;
+                padding: 10px 14px;
+                border-radius: 5px;
+                cursor: pointer;
+                text-decoration: none;
+                display: inline-block;
+                width: auto;
+            }}
+            a {{ color: #234b7a; }}
+            table {{ width: 100%; border-collapse: collapse; }}
+            th, td {{ padding: 9px; border: 1px solid #ddd; text-align: left; }}
+            th {{ background: #e8eef6; }}
+            .message {{ padding: 12px; background: #e8f5e9; border-radius: 5px; }}
+            .nav a {{ margin-right: 12px; }}
+        </style>
     </head>
     <body>
-        <div class="nav">Digital Attendance System</div>
-        """ + content + """
-        <div class="footer">Digital Attendance Management System</div>
+        <div class="box">
+            <div class="nav">
+                <a href="/">Register</a>
+                <a href="/students">Students</a>
+                <a href="/scan-qr">Scan QR</a>
+                <a href="/attendance-report">Attendance Report</a>
+                <a href="/test-db">Test Database</a>
+            </div>
+            <hr>
+            {body}
+        </div>
     </body>
     </html>
-    """, title=title)
+    """
 
 
-def get_students():
-    response = requests.get(
-        GOOGLE_SHEET_URL,
-        params={"type": "students"},
-        timeout=20
+def database_error_page():
+    return make_page(
+        "Database connection",
+        "<h2>MongoDB connection is not ready</h2>"
+        "<p>Check the MONGO_URI environment variable in Render, then try again.</p>"
     )
-    response.raise_for_status()
-    rows = response.json()
-
-    students = []
-
-    for row in rows[1:]:
-        if len(row) >= 3 and row[0]:
-            students.append({
-                "student_id": str(row[0]),
-                "student_name": str(row[1]),
-                "roll_number": str(row[2])
-            })
-
-    return students
 
 
-def get_attendance():
-    response = requests.get(
-        GOOGLE_SHEET_URL,
-        params={"type": "attendance"},
-        timeout=20
-    )
-    response.raise_for_status()
-    rows = response.json()
-
-    records = []
-
-    for row in rows[1:]:
-        if len(row) >= 4 and row[0]:
-            records.append({
-                "student_id": str(row[0]),
-                "student_name": str(row[1]),
-                "roll_number": str(row[2]),
-                "attendance_date": str(row[3])
-            })
-
-    return records
-
-
-@app.route("/", methods=["GET", "POST"])
+@app.route("/")
 def home():
-    message = ""
+    body = """
+    <h1>Digital Attendance System</h1>
+    <h2>Register Student</h2>
+    <form method="POST" action="/add-student">
+        <label>Student ID</label>
+        <input name="student_id" required>
 
-    if request.method == "POST":
-        student_id = request.form["student_id"].strip()
-        student_name = request.form["name"].strip()
-        roll_number = request.form["roll"].strip()
+        <label>Student Name</label>
+        <input name="student_name" required>
 
-        try:
-            students = get_students()
+        <label>Roll Number</label>
+        <input name="roll_number" required>
 
-            if any(s["student_id"] == student_id for s in students):
-                message = "Student ID already exists."
-            else:
-                response = requests.post(
-                    GOOGLE_SHEET_URL,
-                    json={
-                        "action": "register",
-                        "student_id": student_id,
-                        "student_name": student_name,
-                        "roll_number": roll_number
-                    },
-                    timeout=20
-                )
-                response.raise_for_status()
-                message = "Student registered successfully!"
+        <label>Department</label>
+        <input name="department" required>
 
-        except Exception as error:
-            print("Registration Error:", error)
-            message = "Registration failed. Please try again."
+        <label>Year of Study</label>
+        <input name="year_of_study" required>
 
-    content = """
-    <div class="container">
-        <div class="card">
-            <h1>Student Registration</h1>
-            <p class="subtitle">
-                Register students and manage attendance in one place.
-            </p>
+        <button type="submit">Register Student</button>
+    </form>
+    """
+    return make_page("Digital Attendance", body)
 
-            <form method="POST">
-                <label>Student ID</label>
-                <input name="student_id" required placeholder="STU006">
 
-                <label>Roll Number</label>
-                <input name="roll" required placeholder="Enter roll number">
+@app.route("/add-student", methods=["POST"])
+def add_student():
+    if not check_database():
+        return database_error_page()
 
-                <label>Student Name</label>
-                <input name="name" required placeholder="Enter student name">
+    student_id = request.form.get("student_id", "").strip()
+    student_name = request.form.get("student_name", "").strip()
+    roll_number = request.form.get("roll_number", "").strip()
+    department = request.form.get("department", "").strip()
+    year_of_study = request.form.get("year_of_study", "").strip()
 
-                <button class="btn primary full" type="submit">
-                    Register Student
-                </button>
-            </form>
+    if not all([student_id, student_name, roll_number, department, year_of_study]):
+        return make_page("Registration", "<p>Please fill in every field.</p>")
 
-            {%
+    try:
+        students.insert_one({
+            "student_id": student_id,
+            "student_name": student_name,
+            "roll_number": roll_number,
+            "department": department,
+            "year_of_study": year_of_study,
+            "created_at": datetime.now()
+        })
+    except DuplicateKeyError:
+        return make_page(
+            "Registration",
+            "<h2>Student ID already exists.</h2><a href='/'>Go back</a>"
+        )
+    except Exception as error:
+        return make_page("Registration", f"<h2>Could not save student.</h2><p>{error}</p>")
+
+    return make_page(
+        "Registration",
+        "<h2>Student registered successfully!</h2><a href='/students'>View Students</a>"
+    )
+
+
+@app.route("/test-db")
+def test_db():
+    if not check_database():
+        return database_error_page()
+
+    students.create_index("student_id", unique=True)
+    attendance.create_index(
+        [("student_id", 1), ("attendance_date", 1)],
+        unique=True
+    )
+    return make_page("Database Test", "<h2>MongoDB connected successfully!</h2>")
+
+
+@app.route("/students")
+def student_list():
+    if not check_database():
+        return database_error_page()
+
+    student_rows = list(students.find().sort("student_name", 1))
+    rows = ""
+
+    for student in student_rows:
+        student_id = student.get("student_id", "")
+        name = student.get("student_name", "")
+        roll = student.get("roll_number", "")
+        department = student.get("department", "")
+        year = student.get("year_of_study", "")
+
+        rows += f"""
+        <tr>
+            <td>{student_id}</td>
+            <td>{name}</td>
+            <td>{roll}</td>
+            <td>{department}</td>
+            <td>{year}</td>
+            <td><a href="/generate-qr/{student_id}">Generate QR</a></td>
+        </tr>
+        """
+
+    body = f"""
+    <h1>Student List</h1>
+    <table>
+        <tr>
+            <th>Student ID</th><th>Name</th><th>Roll Number</th>
+            <th>Department</th><th>Year</th><th>QR Code</th>
+        </tr>
+        {rows}
+    </table>
+    """
+    return make_page("Students", body)
+
+
+@app.route("/generate-qr/<student_id>")
+def generate_qr(student_id):
+    if not check_database():
+        return database_error_page()
+
+    student = students.find_one({"student_id": student_id})
+    if student is None:
+        return make_page("QR Code", "<h2>Student not found.</h2>")
+
+    attendance_url = request.url_root.rstrip("/") + url_for(
+        "mark_attendance", student_id=student_id
+    )
+
+    qr = qrcode.make(attendance_url)
+    image_file = io.BytesIO()
+    qr.save(image_file, format="PNG")
+    qr_image = base64.b64encode(image_file.getvalue()).decode("utf-8")
+
+    body = f"""
+    <h1>Student QR Code</h1>
+    <p><b>Name:</b> {student.get('student_name', '')}</p>
+    <p><b>Student ID:</b> {student_id}</p>
+    <img src="data:image/png;base64,{qr_image}" alt="Student QR Code">
+    <p>Scan this QR code to open the attendance page.</p>
+    """
+    return make_page("QR Code", body)
+
+
+@app.route("/mark-attendance/<student_id>")
+def mark_attendance(student_id):
+    if not check_database():
+        return database_error_page()
+
+    student = students.find_one({"student_id": student_id})
+    if student is None:
+        return make_page("Attendance", "<h2>Student not found.</h2>")
+
+    now = datetime.now()
+    today = now.strftime("%Y-%m-%d")
+
+    try:
+        attendance.insert_one({
+            "student_id": student_id,
+            "student_name": student.get("student_name", ""),
+            "attendance_date": today,
+            "attendance_time": now.strftime("%H:%M:%S"),
+            "status": "Present"
+        })
+    except DuplicateKeyError:
+        return make_page(
+            "Attendance",
+            f"<h2>Attendance already marked for {student.get('student_name', '')} today.</h2>"
+        )
+    except Exception as error:
+        return make_page("Attendance", f"<h2>Could not mark attendance.</h2><p>{error}</p>")
+
+    return make_page(
+        "Attendance",
+        f"<h2>Attendance marked successfully!</h2>"
+        f"<p>Name: {student.get('student_name', '')}</p>"
+        f"<p>Student ID: {student_id}</p>"
+        f"<p>Date: {today}</p><p>Time: {now.strftime('%H:%M:%S')}</p>"
+    )
+
+
+@app.route("/scan-qr")
+def scan_qr():
+    body = """
+    <style>
+        .box { max-width: 1000px; }
+        .scanner-page { color: #edf3ff; }
+        .scanner-hero {
+            background: linear-gradient(135deg, #101a35, #233f73 60%, #286c88);
+            color: white;
+            padding: 30px;
+            border-radius: 18px;
+            margin: 18px 0;
+            box-shadow: 0 14px 35px rgba(25, 48, 88, .18);
+        }
+        .scanner-hero h1 { color: white; font-size: 30px; margin: 8px 0; }
+        .scanner-hero p { color: #d8e5ff; line-height: 1.6; }
+        .eyebrow { text-transform: uppercase; letter-spacing: 2px; font-size: 12px; font-weight: bold; color: #a9d9ff; }
+        .scanner-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(220px, .8fr); gap: 20px; }
+        .scanner-card, .guide-card { background: #fff; border: 1px solid #e4eaf2; border-radius: 16px; padding: 22px; box-shadow: 0 8px 24px rgba(26, 48, 80, .07); }
+        .scanner-card h2, .guide-card h2 { margin-top: 0; }
+        #reader { width: 100%; overflow: hidden; border-radius: 12px; }
+        #reader video { border-radius: 12px; }
+        #reader button { width: auto; margin: 6px; }
+        #reader select { max-width: 100%; padding: 8px; border-radius: 8px; }
+        .status-pill { display: inline-block; padding: 7px 11px; background: #edf7f2; color: #18794e; border-radius: 20px; font-size: 13px; font-weight: bold; }
+        .guide-item { display: flex; gap: 12px; margin: 18px 0; align-items: flex-start; }
+        .guide-number { min-width: 30px; height: 30px; display: grid; place-items: center; background: #eaf1ff; color: #234b7a; border-radius: 9px; font-weight: bold; }
+        .guide-item p { margin: 4px 0 0; color: #667085; font-size: 14px; line-height: 1.5; }
+        #message { padding: 12px; background: #f3f6fb; color: #344054; border-radius: 10px; min-height: 20px; }
+        @media (max-width: 700px) { .scanner-layout { grid-template-columns: 1fr; } .scanner-hero { padding: 22px; } .scanner-hero h1 { font-size: 25px; } }
+    </style>
+
+    <div class="scanner-page">
+        <div class="scanner-hero">
+            <div class="eyebrow">Digital Attendance · Live Scanner</div>
+            <h1>Scan student QR code</h1>
+            <p>Use your camera to scan a registered student's QR code and open their attendance page.</p>
+            <span class="status-pill">● Scanner ready</span>
+        </div>
+
+        <div class="scanner-layout">
+            <section class="scanner-card">
+                <h2>Camera scanner</h2>
+                <p style="color:#667085">Allow camera access when your browser asks.</p>
+                <div id="reader"></div>
+                <p id="message" role="status">Starting scanner…</p>
+            </section>
+
+            <aside class="guide-card">
+                <h2>How to use</h2>
+                <div class="guide-item">
+                    <span class="guide-number">1</span>
+                    <div><b>Allow camera</b><p>Choose Allow when the browser requests camera permission.</p></div>
+                </div>
+                <div class="guide-item">
+                    <span class="guide-number">2</span>
+                    <div><b>Point at the QR</b><p>Keep the code inside the scanner frame and hold your device steady.</p></div>
+                </div>
+                <div class="guide-item">
+                    <span class="guide-number">3</span>
+                    <div><b>Confirm attendance</b><p>After scanning, the student attendance page will open.</p></div>
+                </div>
+                <hr style="border:0;border-top:1px solid #e8edf4;margin:20px 0">
+                <p style="color:#667085;font-size:13px;line-height:1.6">Tip: Camera scanning usually requires HTTPS. Open this page through your deployed Render website or localhost.</p>
+            </aside>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script>
+        function qrSuccess(decodedText) {
+            document.getElementById("message").innerText = "QR code found. Opening attendance page…";
+            window.location.href = decodedText;
+        }
+
+        if (typeof Html5QrcodeScanner !== "undefined") {
+            const scanner = new Html5QrcodeScanner("reader", {
+                fps: 10,
+                qrbox: { width: 230, height: 230 },
+                rememberLastUsedCamera: true
+            });
+            scanner.render(qrSuccess, function () {});
+            document.getElementById("message").innerText = "Ready. Point the camera at a student QR code.";
+        } else {
+            document.getElementById("message").innerText = "Scanner could not load. Check your internet connection and refresh the page.";
+        }
+    </script>
+    """
+    return make_page("Scan QR | Digital Attendance", body)
+
+
+@app.route("/attendance-report")
+def attendance_report():
+    if not check_database():
+        return database_error_page()
+
+    records = list(attendance.find().sort([
+        ("attendance_date", -1),
+        ("attendance_time", -1)
+    ]))
+
+    rows = ""
+    for record in records:
+        rows += f"""
+        <tr>
+            <td>{record.get('student_id', '')}</td>
+            <td>{record.get('student_name', '')}</td>
+            <td>{record.get('attendance_date', '')}</td>
+            <td>{record.get('attendance_time', '')}</td>
+            <td>{record.get('status', '')}</td>
+        </tr>
+        """
+
+    body = f"""
+    <h1>Attendance Report</h1>
+    <table>
+        <tr>
+            <th>Student ID</th><th>Name</th><th>Date</th>
+            <th>Time</th><th>Status</th>
+        </tr>
+        {rows}
+    </table>
+    """
+    return make_page("Attendance Report", body)
+
+
+if __name__ == "__main__":
+    if check_database():
+        students.create_index("student_id", unique=True)
+        attendance.create_index(
+            [("student_id", 1), ("attendance_date", 1)],
+            unique=True
+        )
+
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
