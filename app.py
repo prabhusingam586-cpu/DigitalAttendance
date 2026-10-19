@@ -176,18 +176,6 @@ def add_student():
     )
 
 
-@app.route("/test-db")
-def test_db():
-    if not check_database():
-        return database_error_page()
-
-    students.create_index("student_id", unique=True)
-    attendance.create_index(
-        [("student_id", 1), ("attendance_date", 1)],
-        unique=True
-    )
-    return make_page("Database Test", "<h2>MongoDB connected successfully!</h2>")
-
 
 @app.route("/students")
 def student_list():
