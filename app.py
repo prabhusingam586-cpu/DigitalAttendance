@@ -95,6 +95,30 @@ def make_page(title, body):
             th {{ background: #e8eef6; }}
             .message {{ padding: 12px; background: #e8f5e9; border-radius: 5px; }}
             .nav a {{ margin-right: 12px; }}
+            /* Mobile table text overflow fix */
+table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+th, td {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+    table {
+        font-size: 12px;
+    }
+
+    th, td {
+        padding: 6px 4px;
+    }
+}
         </style>
     </head>
     <body>
