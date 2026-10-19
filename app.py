@@ -94,7 +94,6 @@ def make_page(title, body):
                 <a href="/students">Students</a>
                 <a href="/scan-qr">Scan QR</a>
                 <a href="/attendance-report">Attendance Report</a>
-                <a href="/test-db">Test Database</a>
             </div>
             <hr>
             {body}
