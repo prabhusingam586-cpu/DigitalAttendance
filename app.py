@@ -110,7 +110,36 @@ def database_error_page():
         "<h2>MongoDB connection is not ready</h2>"
         "<p>Check the MONGO_URI environment variable in Render, then try again.</p>"
     )
+    
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username", "")
+        password = request.form.get("password", "")
 
+        if (
+            username == os.environ.get("ADMIN_USERNAME")
+            and password == os.environ.get("ADMIN_PASSWORD")
+        ):
+            session["admin_logged_in"] = True
+            return redirect(url_for("home"))
+
+        return make_page(
+            "Admin Login",
+            "<h2>Invalid username or password</h2><a href='/login'>Try again</a>"
+        )
+
+    body = """
+    <h1>Admin Login</h1>
+    <form method="POST">
+        <label>Username</label>
+        <input name="username" required>
+        <label>Password</label>
+        <input type="password" name="password" required>
+        <button type="submit">Login</button>
+    </form>
+    """
+    return make_page("Admin Login", body)
 
 @app.route("/")
 def home():
