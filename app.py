@@ -179,6 +179,7 @@ def home():
 
 
 @app.route("/add-student", methods=["POST"])
+@login_required
 def add_student():
     if not check_database():
         return database_error_page()
@@ -257,6 +258,7 @@ def student_list():
 
 
 @app.route("/generate-qr/<student_id>")
+@login_required
 def generate_qr(student_id):
     if not check_database():
         return database_error_page()
@@ -322,6 +324,7 @@ def mark_attendance(student_id):
 
 
 @app.route("/scan-qr")
+@login_required
 def scan_qr():
     body = """
     <style>
@@ -412,6 +415,7 @@ def scan_qr():
 
 
 @app.route("/attendance-report")
+@login_required
 def attendance_report():
     if not check_database():
         return database_error_page()
